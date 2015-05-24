@@ -2,13 +2,11 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
-#include <map>
+#include <algorithm>
 #include <pthread.h>
 #include <ctime>
 #include <sys/socket.h>
-//#include <sys/types.h>
 #include <netdb.h>
-//#include <netinet/in.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
@@ -151,7 +149,7 @@ void* StartConnection( void* _user ){
 	User[Num]->Send( ":W" + to_string( WIDTH ) );
 	User[Num]->Send( ":H" + to_string( HEIGHT ) );
 	User[Num]->Send( ":X" + to_string( MAX_PLAYER ) );
-	User[Num]->Send( ":T" + to_string( TIME_UPDATE ) );
+	User[Num]->Send( ":T" + to_string( BASE_TIME_UPDATE ) );
 	User[Num]->Send( ":P" + to_string( Num + 1 ) );
 	int _x, _y;
 	_x = rand()%WIDTH;
@@ -192,26 +190,65 @@ void* CheckMap( void* ){
 	clock_t _now, _next;
 	_now = clock();
 	_next = _now + TIME_UPDATE;
-	int i;
+	int i, j;
+	vector <XY>::iterator _firstXY, _nextXY;
+	XY tmp;
+	char _direction;
 	string ToSend;
 	while( true ){
 		if( UserSize > 0 and _now > _next ){
 			//update
+			//cout<<"_NOW: "<<_now<<"\nNEXT: "<<_next<<"\n";
+			ToSend.clear();
 			for( i=0; i<MAX_PLAYER; ++i ){
 				if( User[i] != NULL && User[i]->ReturnInit() ){
 					//MOVE
-					
+					_direction = User[i]->ReturnDirection();
+					_firstXY = User[i]->Snake.begin();
+					tmp.X = _firstXY->X;
+					tmp.Y = _firstXY->Y;
+					switch( _direction ){
+						case 'u':
+							_firstXY->Y -= 1;
+							if( User[i]->Snake[0].Y < 0 ){
+								User[i]->GameOver();
+							}
+							break;
+						case 'd':
+							_firstXY->Y += 1;
+							if( User[i]->Snake[0].Y >= HEIGHT ){
+								User[i]->GameOver();
+							}
+							break;
+						case 'r':
+							_firstXY->X += 1;
+							if( User[i]->Snake[0].X >= WIDTH ){
+								User[i]->GameOver();
+							}
+							break;
+						case 'l':
+							_firstXY->X -= 1;
+							if( User[i]->Snake[0].X < 0 ){
+								User[i]->GameOver();
+							}
+							break;
+						default:
+							break;
+					}
+					for( _nextXY = User[i]->Snake.begin() + 1; _nextXY != User[i]->Snake.end(); _nextXY++ ){
+						swap( *_nextXY, tmp );
+					}
+					ToSend += ":p" + to_string( i+1 ) + " ";
+					ToSend += User[i]->ToString();
 					//MAP
-										
+					
+					//TO DO			
 				}
 			}
 			//send
 			for( i=0; i<MAX_PLAYER; ++i ){
-				if( User[i] != NULL ){
-					if( User[i]->ReturnInit() ){
-						
-						User[i]->Send( ToSend );
-					}
+				if( User[i] != NULL && User[i]->ReturnInit() ){
+					User[i]->SendEx( ToSend );
 				}
 			}
 			_now = clock();

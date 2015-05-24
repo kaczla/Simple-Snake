@@ -5,8 +5,8 @@
 #define MAX_LISTEN_QUEUE 5
 #define MAX_RECV 4048
 #define MAX_PLAYER 4
-#define WIDTH 50
-#define HEIGHT 50
+#define WIDTH 35
+#define HEIGHT 35
 
 
 #define MAX_PLAYER_EX 16
@@ -15,6 +15,7 @@
 	#define MAX_PLAYER_EX MAX_PLAYER
 #endif
 
-#define TIME_UPDATE 500
+#define BASE_TIME_UPDATE 700
+#define TIME_UPDATE BASE_TIME_UPDATE * CLOCKS_PER_SEC / 1000
 
 #endif

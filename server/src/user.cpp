@@ -20,10 +20,25 @@ user::user( int _socket, std::string _hostname ){
 user::~user(){
 	pthread_mutex_unlock( &this->Lock );
 	pthread_mutex_destroy( &this->Lock );
-	send( this->Socket, ":quit", 5, 0 );
+	send( this->Socket, ":Q", 2, 0 );
 	close( this->Socket );
 }
 
+/*
+ * TO CLIENT ( beginning ':' = COMMAND ):
+ * 
+ * :W[Number] - WIDTH [Number]
+ * :H[Number] - HEIGHT [Number]
+ * :X[Players] - NUMBER OF PLAYERS [Players]
+ * :T[Time] - REFRESH TIME [Time]
+ * :P[Number] - YOUR NUMBER [Number]
+ * :p[Number] [X;Y] ... [X;Y] - PLAYER NUMBER [Number] COORDINATES [X;Y] ...
+ * :G - GameOver - u can watch
+ * :Q - QUIT
+ * 
+ * ( without ':' = MSG )
+ * Message
+ */
 int user::Send( std::string _input ){
 	if( _input.empty() ){
 		return -1;
@@ -31,8 +46,6 @@ int user::Send( std::string _input ){
 	else{
 		_input.append( "\n" );
 		this->ErrorSend = send( this->Socket, _input.c_str(), _input.size(), 0 );
-		std::cout<<"TEXT: "<<_input<<": "<<this->ErrorSend<<"\n";
-		std::cout<<this->Socket<<"\n";
 		return this->ErrorSend;
 	}
 }
@@ -59,24 +72,66 @@ std::string user::ReturnMsg(){
 	return this->Msg;
 }
 
+std::string user::ToString(){
+	this->tmp.clear();
+	for( this->it = this->Snake.begin(); it != this->Snake.end(); it++ ){
+		this->tmp += std::to_string( it->X ) + ';' + std::to_string( it->Y ) + ' ';
+	}
+	//std::cout<<"tmp:\'"<<tmp<<"\'\n";
+	this->tmp.append( "\n" );	
+	return this->tmp;
+}
+
+/*
+ * FROM CLIENT ( beginning ':' ):
+ * Example: ":u"
+ *  
+ * Direction:
+ * u - UP
+ * d - DOWN
+ * l - LEFT
+ * r - RIGHT
+ * 
+ * Other
+ * Q - QUIT
+ */
 void user::Action(){
 	this->Msg = this->msg;
-	//TO DO
-	if( this->Msg.front() == ':' ){
-		this->Msg.erase( this->Msg.begin() );
+	this->Lines.clear();
+	this->Line.clear();
+	this->Lines.str( this->Msg );
+	while( getline( this->Lines, this->Line ) ){
+		this->Front = this->Line.front();
+		if( this->Front == ':' ){
+			this->Line.erase( this->Line.begin() );
+			this->Front = this->Line.front();
+			switch( this->Front ){
+				case 'u':
+					this->Direction = 'u';
+					break;
+				case 'd':
+					this->Direction = 'd';
+					break;
+				case 'l':
+					this->Direction = 'l';
+					break;
+				case 'r':
+					this->Direction = 'r';
+					break;
+				case 'Q':
+					this->Init = false;
+					this->Connect = false;
+					this->Snake.clear();
+					break;
+				default:
+					break;
+			}
+		}
 	}
 }
 
 void user::SetDirection( char _input ){
 	this->Direction = _input;
-}
-
-void  user::SetHead( int &_x, int &_y ){
-	this->Head.Set( _x, _y );
-}
-
-void  user::SetTail( int &_x, int &_y ){
-	this->Tail.Set( _x, _y );
 }
 
 void  user::AddSnake( int &_x, int &_y ){
@@ -88,8 +143,6 @@ void  user::AddSnake( std::vector<XY> &_input ){
 }
 
 void user::SetHeadTail( int &_x, int &_y ){
-	this->Head.Set( _x, _y );
-	this->Tail.Set( _x, _y );
 	this->Snake.clear();
 	this->Snake.push_back( XY( _x, _y ) );	
 }
@@ -112,4 +165,10 @@ bool user::ReturnConnect(){
 
 bool user::ReturnInit(){
 	return this->Init;
+}
+
+void user::GameOver(){
+	this->Init = false;
+	this->Snake.clear();
+	this->Send( ":G" );
 }

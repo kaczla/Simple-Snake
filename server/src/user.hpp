@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <sstream>
 #include "def.hpp"
 
 struct XY{
@@ -32,17 +33,19 @@ public:
 	bool ReturnConnect();
 	char ReturnDirection();
 	bool ReturnInit();
+	std::string ToString();
 	void SetDirection( char _input );
-	void SetHead( int &_x, int &_y );
-	void SetTail( int &_x, int &_y );
 	void AddSnake( int &_x, int &_y );
 	void AddSnake( std::vector<XY> &_input );
 	void SetHeadTail( int &_x, int &_y );
 	void SetInit( bool _input );
 	void ClearSnake();
+	void GameOver();
 	void Action();
 	//Snake
 	std::vector <XY> Snake;
+	
+	pthread_mutex_t Lock;
 private:
 	int Socket;
 	std::string HostName;
@@ -50,16 +53,17 @@ private:
 	char msg[MAX_RECV];
 	std::string Msg;
 	//Snake
-	char Direction;
-	XY Head, Tail;
+	char Direction;	
+	std::vector<XY>::iterator it;
+	//Recv
+	std::istringstream Lines;
+	std::string Line;
+	char Front;
+	std::string tmp;
 	//error
 	int ErrorSend, ErrorRecv;
-	public:
-	
-	pthread_mutex_t Lock;
 };
 
 user *User[MAX_PLAYER] = { NULL };
-//short map[10][10];
 
 #endif
