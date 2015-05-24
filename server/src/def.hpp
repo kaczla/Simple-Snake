@@ -3,7 +3,12 @@
 
 #define SERVER_NAME "Simple_Snake"
 #define MAX_LISTEN_QUEUE 5
+#define MAX_RECV 4048
 #define MAX_PLAYER 4
+#define WIDTH 50
+#define HEIGHT 50
+
+
 #define MAX_PLAYER_EX 16
 #if MAX_PLAYER >= MAX_PLAYER_EX
 	#undef MAX_PLAYER_EX

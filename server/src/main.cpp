@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <map>
 #include <pthread.h>
 #include <ctime>
 #include <sys/socket.h>
@@ -26,10 +27,12 @@ void CaughtSignal( int _signal );
 void* StartConnection( void* _user);
 void* CheckMap( void* );
 int GetFirst();
+void SetMap();
 
 int Socket = -1;
 extern user *User[MAX_PLAYER];
 int UserSize = 0;
+int Map[HEIGHT][WIDTH] = { -1 };
 
 int main( int argc, char* argv[] ){
 	//bind ending signal
@@ -47,7 +50,7 @@ int main( int argc, char* argv[] ){
 	if( Socket < 0 ){
 		return 2;
 	}
-	//
+	//CHECK MAP
 	pthread_t TID_0;
 	Error = pthread_create( &TID_0, NULL, CheckMap, NULL );
 	if( Error ){
@@ -87,14 +90,20 @@ int InitSocket( int _port, string _hostname ){
 	if( _Socket < 0 ){
 		perror( "[ERROR] socket" );
 		return -1;
+	}	
+	// /*
+	int _tmp = 1;
+	_Error = setsockopt( _Socket, SOL_SOCKET, SO_REUSEADDR, (char const*)&_tmp, sizeof( _tmp ) );
+	if( _Error < 0 ){
+		perror( "[ERROR] fcntl" );
+		return -1;
 	}
-	/*
 	_Error = fcntl( _Socket, F_SETFL, O_NONBLOCK );
 	if( _Error < 0 ){
 		perror( "[ERROR] fcntl" );
 		return -1;
 	}
-	*/
+	// */
 	Server.sin_family = PF_INET;
 	Server.sin_addr.s_addr = htonl( INADDR_ANY );
 	Server.sin_port = htons( _port );
@@ -134,13 +143,38 @@ void* StartConnection( void* _user ){
 		close( ClientInfo.Socket );
 		pthread_exit( NULL );
 	}
-	User[Num] = new user( );
+	User[Num] = new user( ClientInfo.Socket, ClientInfo.HostName );
 	++UserSize;
-	
-	while( true ){
-		
+	cout<<"New user:\n\tHOST = "<<ClientInfo.HostName<<"\n\tSOCKET = "<<ClientInfo.Socket<<"\n";
+	pthread_mutex_lock( &User[Num]->Lock );
+	//c++11: to_string	
+	User[Num]->Send( ":W" + to_string( WIDTH ) );
+	User[Num]->Send( ":H" + to_string( HEIGHT ) );
+	User[Num]->Send( ":X" + to_string( MAX_PLAYER ) );
+	User[Num]->Send( ":T" + to_string( TIME_UPDATE ) );
+	User[Num]->Send( ":P" + to_string( Num + 1 ) );
+	int _x, _y;
+	_x = rand()%WIDTH;
+	_y = rand()%HEIGHT;
+	while( Map[_y][_x] > 0 ){
+		_x = rand()%WIDTH;
+		_y = rand()%HEIGHT;
+	}
+	Map[_y][_x] = Num + 1;
+	User[Num]->SetHeadTail( _x, _y );
+	pthread_mutex_unlock( &User[Num]->Lock );
+	int _error;
+	User[Num]->SetInit( true );	
+	while( User[Num]->ReturnConnect() ){
+		_error = User[Num]->Recv();
+		if( _error > 0 ){
+			User[Num]->Action();
+		}
 	}
 	--UserSize;
+	delete User[Num];
+	User[Num] = NULL;
+	close( ClientInfo.Socket );
 	pthread_exit( NULL );
 }
 
@@ -154,15 +188,44 @@ int GetFirst(){
 }
 
 void* CheckMap( void* ){
+	SetMap();
 	clock_t _now, _next;
 	_now = clock();
 	_next = _now + TIME_UPDATE;
+	int i;
+	string ToSend;
 	while( true ){
 		if( UserSize > 0 and _now > _next ){
-			
+			//update
+			for( i=0; i<MAX_PLAYER; ++i ){
+				if( User[i] != NULL && User[i]->ReturnInit() ){
+					//MOVE
+					
+					//MAP
+										
+				}
+			}
+			//send
+			for( i=0; i<MAX_PLAYER; ++i ){
+				if( User[i] != NULL ){
+					if( User[i]->ReturnInit() ){
+						
+						User[i]->Send( ToSend );
+					}
+				}
+			}
+			_now = clock();
+			_next = _now + TIME_UPDATE;
 		}
 		_now = clock();
-		_next = _now + TIME_UPDATE;
 	}
 	pthread_exit( NULL );
+}
+
+void SetMap(){
+	for( int i=0; i<HEIGHT; ++i ){
+		for( int j=0; j<WIDTH; ++j ){
+			Map[i][j] = -1;
+		}
+	}	 
 }
