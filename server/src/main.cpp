@@ -128,6 +128,11 @@ void CaughtSignal( int _signal ){
 	else{
 		cout<<"\nCaught signal number: "<<_signal<<"\nEXIT\n";
 	}
+	for( int i=0; i<MAX_PLAYER; ++i ){
+		if( User[i] != NULL ){
+			User[i]->Close();
+		} 
+	}
 	close( Socket );
 	exit( 0 );
 }
@@ -155,8 +160,8 @@ void* StartConnection( void* _user ){
 	_x = rand()%WIDTH;
 	_y = rand()%HEIGHT;
 	while( Map[_y][_x] > 0 ){
-		_x = rand()%WIDTH;
-		_y = rand()%HEIGHT;
+		_x = rand()%( WIDTH - 6 ) + 3 ;
+		_y = rand()%( HEIGHT - 6 ) + 3;
 	}
 	Map[_y][_x] = Num + 1;
 	User[Num]->SetHeadTail( _x, _y );
@@ -201,6 +206,8 @@ void* CheckMap( void* ){
 			//cout<<"_NOW: "<<_now<<"\nNEXT: "<<_next<<"\n";
 			ToSend.clear();
 			for( i=0; i<MAX_PLAYER; ++i ){
+				//TO DO
+				//Add collision with other player
 				if( User[i] != NULL && User[i]->ReturnInit() ){
 					//MOVE
 					_direction = User[i]->ReturnDirection();
@@ -235,6 +242,9 @@ void* CheckMap( void* ){
 						default:
 							break;
 					}
+					if( User[i]->Snake.size() <= 0 ){
+						continue;
+					}
 					for( _nextXY = User[i]->Snake.begin() + 1; _nextXY != User[i]->Snake.end(); _nextXY++ ){
 						swap( *_nextXY, tmp );
 					}
@@ -246,6 +256,7 @@ void* CheckMap( void* ){
 				}
 			}
 			//send
+			ToSend += ":R";
 			for( i=0; i<MAX_PLAYER; ++i ){
 				if( User[i] != NULL && User[i]->ReturnInit() ){
 					User[i]->SendEx( ToSend );

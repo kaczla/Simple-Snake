@@ -1,5 +1,5 @@
 DIR := ./src
-SOURCE := $(DIR)/main.cpp 
+SOURCE := $(DIR)/main.cpp
 CXXFLAGS := -std=c++11 -Ofast
 LDLIBS := -pthread
 APP_NAME := client.out

@@ -26,6 +26,7 @@ public:
 	user();
 	user( int _socket, std::string _hostname );
 	~user();
+	void Close();
 	int Send( std::string _input );
 	int SendEx( std::string &_input );
 	int Recv();

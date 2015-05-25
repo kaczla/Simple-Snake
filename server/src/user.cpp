@@ -20,6 +20,12 @@ user::user( int _socket, std::string _hostname ){
 user::~user(){
 	pthread_mutex_unlock( &this->Lock );
 	pthread_mutex_destroy( &this->Lock );
+	std::cout<<"Leaving user: "<<this->Socket<<"\n";
+	send( this->Socket, ":Q", 2, 0 );
+	close( this->Socket );
+}
+
+void user::Close(){
 	send( this->Socket, ":Q", 2, 0 );
 	close( this->Socket );
 }
@@ -35,6 +41,7 @@ user::~user(){
  * :p[Number] [X;Y] ... [X;Y] - PLAYER NUMBER [Number] COORDINATES [X;Y] ...
  * :G - GameOver - u can watch
  * :Q - QUIT
+ * :R - Refresh ( map )
  * 
  * ( without ':' = MSG )
  * Message
@@ -55,7 +62,9 @@ int user::SendEx( std::string &_input ){
 		return -1;
 	}
 	else{
-		_input.append( "\n" );
+		if( _input.back() != '\n' ){
+			_input += '\n';
+		}
 		this->ErrorSend = send( this->Socket, _input.c_str(), _input.size(), 0 );
 		return this->ErrorSend;
 	}
