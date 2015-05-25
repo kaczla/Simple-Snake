@@ -3,6 +3,7 @@
 client::client( string _host, int _port ){
 	this->Init = true;
 	this->SnakeInit = false;
+	this->Death = false;
 	this->Width = -1;
 	this->Height = -1;
 	this->Player = -1;
@@ -13,6 +14,15 @@ client::client( string _host, int _port ){
 			this->Map[i][j] = -1;
 		}
 	}
+	this->SnakeChar = {
+		//FOOD
+		{ 0, 'O' },
+		//SNAKE
+		{ 1, '1' }, { 2, '2' }, { 3, '3' }, { 4, '4' }, { 5, '5' },
+		{ 6, '6' }, { 7, '7' }, { 8, '8' }, { 9, '9' }, { 10, '@' },
+		{ 11, '#' }, { 12, '$' }, { 13, '%' }, { 14, '&' }, { 15, '=' },
+		{ 16, '+' }
+	};
 	this->SetPort( _port );
 	this->SetHost( _host );
 	this->Init = this->StartConnection();
@@ -258,10 +268,10 @@ void client::ReveiceData(){
 							Find1 = Find2 + 1 ;
 							this->Find = this->TMP.find( ';' );
 							this->TMP_XY = this->TMP.substr( 0, this->Find );
-							this->_i = stoi( this->TMP_XY );
+							this->_xy.X = stoi( this->TMP_XY );
 							this->TMP_XY = this->TMP.substr( this->Find + 1, this->TMP.size() - this->Find - 1  );
-							this->_j = stoi( this->TMP_XY );
-							this->Map[_j][_i] = this->Other;
+							this->_xy.Y = stoi( this->TMP_XY );
+							this->Map[_xy.Y][_xy.X] = this->Other;
 						}
 						break;
 					case 'R':
@@ -269,7 +279,10 @@ void client::ReveiceData(){
 						this->ClearMap();
 						break;
 					case 'G':
-						cout<<this->ReturnTime()<<"GAME OVER!\n";						
+						cout<<this->ReturnTime()<<RED_COLOR<<BOLD_TEXT<<"GAME OVER!"<<DEFAULT_COLOR<<"\n";
+						cout<<this->ReturnTime()<<RED_COLOR<<BOLD_TEXT<<"GAME OVER!"<<DEFAULT_COLOR<<"\n";
+						cout<<this->ReturnTime()<<RED_COLOR<<BOLD_TEXT<<"GAME OVER!"<<DEFAULT_COLOR<<"\n";
+						this->Death = true;
 						break;
 					case 'Q':
 							cout<<this->ReturnTime()<<"Disconnected\n";
@@ -305,7 +318,13 @@ void client::CheckSnakeInit(){
 
 void client::PrintMap(){
 	if( this->SnakeInit ){
-		cout<<this->ReturnTime()<<"\n";
+		cout<<'\r'<<this->ReturnTime()
+			<<BOLD_TEXT<<"YOUR NUMBER: "<<this->MyID
+			<<" CHAR: "<<this->SnakeChar[this->MyID];
+		if( this->Death ){
+			cout<<RED_COLOR<<"  YOU ARE DEATH"<<DEFAULT_COLOR<<"  "<<GREEN_COLOR<<"TRY AGAIN!";
+		}
+		cout<<DEFAULT_COLOR<<"\n";
 		cout<<this->TopMap<<"\n";
 		for( this->_i = 0; this->_i < this->Height; ++this->_i ){
 			cout<<this->LRMap;
@@ -314,7 +333,7 @@ void client::PrintMap(){
 					cout<<" ";
 				}
 				else{
-					cout<<this->Map[_i][_j];
+					cout<<this->SnakeChar[this->Map[_i][_j]];
 				}
 			}
 			cout<<this->LRMap<<"\n";
@@ -340,4 +359,8 @@ string client::ReturnTime(){
 
 string client::ReturnTime_(){
 	return this->ReturnTime();
+}
+
+void client::SetDeath(){
+	this->Death = false;
 }

@@ -7,13 +7,13 @@
 #define MAX_PLAYER 4
 
 //MAX 100
-#define WIDTH 35
+#define WIDTH 40
 #if WIDTH > 100
 	#undef WIDTH
 	#define WIDTH 100
 #endif
 //MAX 100
-#define HEIGHT 35
+#define HEIGHT 20
 #if HEIGHT > 100
 	#undef HEIGHT
 	#define HEIGHT 100
@@ -26,7 +26,7 @@
 	#define MAX_PLAYER_EX MAX_PLAYER
 #endif
 
-#define BASE_TIME_UPDATE 700
+#define BASE_TIME_UPDATE 1500
 #if BASE_TIME_UPDATE < 500
 	#undef BASE_TIME_UPDATE
 	#define BASE_TIME_UPDATE 500

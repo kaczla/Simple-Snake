@@ -4,6 +4,7 @@
 #define MAX_RECV_BUFFER 4096
 
 #define DEFAULT_COLOR "\033[0m"
+
 #define RED_COLOR "\033[91m"
 #define GREEN_COLOR "\033[92m"
 #define YELLOW_COLOR "\033[93m"

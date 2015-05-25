@@ -130,7 +130,8 @@ void CaughtSignal( int _signal ){
 	}
 	for( int i=0; i<MAX_PLAYER; ++i ){
 		if( User[i] != NULL ){
-			User[i]->Close();
+			delete User[i];
+			User[i] = NULL;
 		} 
 	}
 	close( Socket );
@@ -157,10 +158,10 @@ void* StartConnection( void* _user ){
 	User[Num]->Send( ":T" + to_string( BASE_TIME_UPDATE ) );
 	User[Num]->Send( ":P" + to_string( Num + 1 ) );
 	int _x, _y;
-	_x = rand()%WIDTH;
-	_y = rand()%HEIGHT;
+	_x = rand()%( WIDTH - 6 ) + 3;
+	_y = rand()%( HEIGHT - 6 ) + 3;
 	while( Map[_y][_x] > 0 ){
-		_x = rand()%( WIDTH - 6 ) + 3 ;
+		_x = rand()%( WIDTH - 6 ) + 3;
 		_y = rand()%( HEIGHT - 6 ) + 3;
 	}
 	Map[_y][_x] = Num + 1;
@@ -168,6 +169,7 @@ void* StartConnection( void* _user ){
 	pthread_mutex_unlock( &User[Num]->Lock );
 	int _error;
 	User[Num]->SetInit( true );	
+	User[Num]->SetSnakeInit( true );
 	while( User[Num]->ReturnConnect() ){
 		_error = User[Num]->Recv();
 		if( _error > 0 ){
@@ -197,19 +199,51 @@ void* CheckMap( void* ){
 	_next = _now + TIME_UPDATE;
 	int i, j;
 	vector <XY>::iterator _firstXY, _nextXY;
-	XY tmp;
+	XY tmp, _plus( -1, -1 );
+	vector <XY> _food;
 	char _direction;
 	string ToSend;
 	while( true ){
 		if( UserSize > 0 and _now > _next ){
-			//update
 			//cout<<"_NOW: "<<_now<<"\nNEXT: "<<_next<<"\n";
-			ToSend.clear();
+			SetMap();
+	//FOOD
+			while( _food.size() < UserSize ){
+	//RAND MORE
+				i = rand()%( WIDTH - 2 ) + 1;
+				j = rand()%( HEIGHT - 2 ) + 1;
+				while( Map[j][i] >= 0 ){
+					i = rand()%( WIDTH - 2 ) + 1;
+					j = rand()%( HEIGHT - 2 ) + 1;
+				}
+				Map[j][i] = 0;
+	//SAVE
+				_food.push_back( XY( i, j ) );
+			}
+	//FOOD (STRING) TO SEND
+			ToSend = ":p0 ";
+			for( _nextXY = _food.begin(); _nextXY != _food.end(); _nextXY++ ){
+				i = _nextXY->X;
+				j = _nextXY->Y;
+				Map[j][i] = 0;
+				ToSend += to_string( i ) + ";" + to_string( j ) + " "; 
+			}
+			ToSend.append( "\n" );
 			for( i=0; i<MAX_PLAYER; ++i ){
 				//TO DO
 				//Add collision with other player
-				if( User[i] != NULL && User[i]->ReturnInit() ){
-					//MOVE
+				if( User[i] != NULL && User[i]->ReturnInit() && User[i]->ReturnSnakeInit() ){
+					if( User[i]->ReturnNewGame() ){
+						tmp.X = rand()%( WIDTH - 2 ) + 1;
+						tmp.Y = rand()%( HEIGHT - 2 ) + 1;
+						while( Map[tmp.Y][tmp.X] >= 0 ){
+							tmp.X = rand()%( WIDTH - 2 ) + 1;
+							tmp.Y = rand()%( HEIGHT - 2 ) + 1;
+						}
+						User[i]->AddSnake( tmp.X, tmp.Y );
+						User[i]->SetNewGame( false );
+					}
+	//CHECK HEAD
 					_direction = User[i]->ReturnDirection();
 					_firstXY = User[i]->Snake.begin();
 					tmp.X = _firstXY->X;
@@ -219,24 +253,60 @@ void* CheckMap( void* ){
 							_firstXY->Y -= 1;
 							if( User[i]->Snake[0].Y < 0 ){
 								User[i]->GameOver();
+							}else if( Map[_firstXY->Y][_firstXY->X] == 0 ){
+								_plus.X = User[i]->Snake.back().X;
+								_plus.Y = User[i]->Snake.back().Y;
+								for( _nextXY = _food.begin(); _nextXY != _food.end(); _nextXY++ ){
+									if( _nextXY->X == _firstXY->X and _nextXY->Y == _firstXY->Y ){
+										_food.erase( _nextXY );
+										break;
+									}
+								}
 							}
 							break;
 						case 'd':
 							_firstXY->Y += 1;
 							if( User[i]->Snake[0].Y >= HEIGHT ){
 								User[i]->GameOver();
+							}else if( Map[_firstXY->Y][_firstXY->X] == 0 ){
+								_plus.X = User[i]->Snake.back().X;
+								_plus.Y = User[i]->Snake.back().Y;
+								for( _nextXY = _food.begin(); _nextXY != _food.end(); _nextXY++ ){
+									if( _nextXY->X == _firstXY->X and _nextXY->Y == _firstXY->Y ){
+										_food.erase( _nextXY );
+										break;
+									}
+								}
 							}
 							break;
 						case 'r':
 							_firstXY->X += 1;
 							if( User[i]->Snake[0].X >= WIDTH ){
 								User[i]->GameOver();
+							}else if( Map[_firstXY->Y][_firstXY->X] == 0 ){
+								_plus.X = User[i]->Snake.back().X;
+								_plus.Y = User[i]->Snake.back().Y;
+								for( _nextXY = _food.begin(); _nextXY != _food.end(); _nextXY++ ){
+									if( _nextXY->X == _firstXY->X and _nextXY->Y == _firstXY->Y ){
+										_food.erase( _nextXY );
+										break;
+									}
+								}
 							}
 							break;
 						case 'l':
 							_firstXY->X -= 1;
 							if( User[i]->Snake[0].X < 0 ){
 								User[i]->GameOver();
+							}else if( Map[_firstXY->Y][_firstXY->X] == 0 ){
+								_plus.X = User[i]->Snake.back().X;
+								_plus.Y = User[i]->Snake.back().Y;
+								for( _nextXY = _food.begin(); _nextXY != _food.end(); _nextXY++ ){
+									if( _nextXY->X == _firstXY->X and _nextXY->Y == _firstXY->Y ){
+										_food.erase( _nextXY );
+										break;
+									}
+								}
 							}
 							break;
 						default:
@@ -245,18 +315,25 @@ void* CheckMap( void* ){
 					if( User[i]->Snake.size() <= 0 ){
 						continue;
 					}
+		//OTHER PART
 					for( _nextXY = User[i]->Snake.begin() + 1; _nextXY != User[i]->Snake.end(); _nextXY++ ){
 						swap( *_nextXY, tmp );
+						Map[_nextXY->Y][_nextXY->X] = i + 1;
 					}
+		//ADD ONE MORE
+					if( _plus.X != -1 and _plus.Y != -1){
+						User[i]->AddSnake( _plus.X, _plus.Y );
+						Map[_plus.Y][_plus.X] = i + 1;
+						_plus.X = -1;
+						_plus.Y = -1;
+					}
+		//PLAYER (STRING) TO SEND
 					ToSend += ":p" + to_string( i+1 ) + " ";
-					ToSend += User[i]->ToString();
-					//MAP
-					
-					//TO DO			
+					ToSend += User[i]->ToString();		
 				}
 			}
-			//send
 			ToSend += ":R";
+		//SEND
 			for( i=0; i<MAX_PLAYER; ++i ){
 				if( User[i] != NULL && User[i]->ReturnInit() ){
 					User[i]->SendEx( ToSend );

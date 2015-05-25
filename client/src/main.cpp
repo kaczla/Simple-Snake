@@ -48,6 +48,8 @@ int main( int argc, char* argv[] ){
 	while( Client.ReturnConnected() and running ){
 		Client.ReveiceData();
 	}
+	running = false;
+	pthread_cancel( PID_Input );
 	pthread_join( PID_Input, NULL );
 	return 0;
 }
@@ -68,15 +70,42 @@ void CaughtSignal( int _signal ){
 
 void* Input( void* ){
 	char _input;
+	string _tmp;
 	if( Pointer == NULL ){
 		cout<<"Problem with connect!\n";
 		running = false;
 		pthread_exit( NULL );
 	}
 	do{
-		_input = getchar();
-		//TO DO
-		
+		cin.get( _input );
+		switch( _input ){
+			case 'w':
+				_tmp = ":u";
+				Pointer->Send( _tmp ); 
+				break;
+			case 's':
+				_tmp = ":d";
+				Pointer->Send( _tmp ); 
+				break;
+			case 'd':
+				_tmp = ":r";
+				Pointer->Send( _tmp ); 
+				break;
+			case 'a':
+				_tmp = ":l";
+				Pointer->Send( _tmp ); 				
+				break;
+			case 'n':
+				_tmp = ":N";
+				Pointer->SetDeath();
+				Pointer->Send( _tmp ); 				
+				break;
+			case 'Q':
+				Pointer->StopClient();
+				break;
+			default:
+				break;
+		}		
 	}while( running );
 	pthread_exit( NULL );
 }

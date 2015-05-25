@@ -34,12 +34,16 @@ public:
 	bool ReturnConnect();
 	char ReturnDirection();
 	bool ReturnInit();
+	bool ReturnSnakeInit();
+	bool ReturnNewGame();
 	std::string ToString();
 	void SetDirection( char _input );
 	void AddSnake( int &_x, int &_y );
 	void AddSnake( std::vector<XY> &_input );
 	void SetHeadTail( int &_x, int &_y );
 	void SetInit( bool _input );
+	void SetSnakeInit( bool _input );
+	void SetNewGame( bool _input );
 	void ClearSnake();
 	void GameOver();
 	void Action();
@@ -50,12 +54,13 @@ public:
 private:
 	int Socket;
 	std::string HostName;
-	bool Connect, Init;
+	bool Connect, Init, SnakeInit;
 	char msg[MAX_RECV];
 	std::string Msg;
 	//Snake
 	char Direction;	
 	std::vector<XY>::iterator it;
+	bool NewGame;
 	//Recv
 	std::istringstream Lines;
 	std::string Line;

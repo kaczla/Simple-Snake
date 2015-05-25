@@ -4,6 +4,8 @@ user::user(){
 	this->Socket = -1;
 	this->Connect = false;
 	this->Init = false;
+	this->SnakeInit = false;
+	this->NewGame = false;
 	this->Direction = 'u';
 	pthread_mutex_init( &this->Lock, NULL );
 }
@@ -13,6 +15,8 @@ user::user( int _socket, std::string _hostname ){
 	this->HostName = _hostname;
 	this->Connect = true;
 	this->Init = false;
+	this->SnakeInit = false;
+	this->NewGame = false;
 	this->Direction = 'u';
 	pthread_mutex_init( &this->Lock, NULL );
 }
@@ -100,6 +104,7 @@ std::string user::ToString(){
  * d - DOWN
  * l - LEFT
  * r - RIGHT
+ * N - NEW GAME
  * 
  * Other
  * Q - QUIT
@@ -127,7 +132,13 @@ void user::Action(){
 				case 'r':
 					this->Direction = 'r';
 					break;
+				case 'N':
+					this->NewGame = true;
+					this->SnakeInit = true;
+					break;
 				case 'Q':
+					this->SnakeInit = false;
+					this->NewGame = false;
 					this->Init = false;
 					this->Connect = false;
 					this->Snake.clear();
@@ -160,6 +171,14 @@ void user::SetInit( bool _input ){
 	this->Init = _input;
 }
 
+void user::SetSnakeInit( bool _input ){
+	this->SnakeInit = _input;
+}
+
+void user::SetNewGame( bool _input ){
+	this->NewGame = _input;
+}
+
 void user::ClearSnake(){
 	this->Snake.clear();
 }
@@ -176,8 +195,16 @@ bool user::ReturnInit(){
 	return this->Init;
 }
 
+bool user::ReturnSnakeInit(){
+	return this->SnakeInit;
+}
+
+bool user::ReturnNewGame(){
+	return this->NewGame;
+}
+
 void user::GameOver(){
-	this->Init = false;
+	this->SnakeInit = false;
 	this->Snake.clear();
 	this->Send( ":G" );
 }

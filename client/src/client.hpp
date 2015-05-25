@@ -7,6 +7,7 @@
 #include <sstream>
 #include <cerrno>
 #include <cstdlib>
+#include <map>
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -40,6 +41,7 @@ public:
 	void ReveiceData();
 	void StopClient();
 	void SetDebug( bool _input );
+	void SetDeath();
 	string ReturnTime_();
 private:
 	bool Init;
@@ -80,6 +82,8 @@ private:
 	int Map[100][100];
 	int _i,_j;
 	string TopMap, BottomMap, LRMap;
+	map <int,char> SnakeChar;
+	bool Death;
 };
 
 #endif
