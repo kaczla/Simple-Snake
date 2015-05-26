@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <string>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <pthread.h>
 #include <ctime>
@@ -201,6 +202,8 @@ void* CheckMap( void* ){
 	vector <XY>::iterator _firstXY, _nextXY;
 	XY tmp, _plus( -1, -1 );
 	vector <XY> _food;
+	map <int,XY> _head;
+	map <int,XY>::iterator _it_head;
 	char _direction;
 	string ToSend;
 	while( true ){
@@ -229,10 +232,10 @@ void* CheckMap( void* ){
 				ToSend += to_string( i ) + ";" + to_string( j ) + " "; 
 			}
 			ToSend.append( "\n" );
-			for( i=0; i<MAX_PLAYER; ++i ){
-				//TO DO
-				//Add collision with other player
+			_head.clear();
+			for( i=0; i<MAX_PLAYER; ++i ){				
 				if( User[i] != NULL && User[i]->ReturnInit() && User[i]->ReturnSnakeInit() ){
+	//NEW GAME / NEW SNAKE
 					if( User[i]->ReturnNewGame() ){
 						tmp.X = rand()%( WIDTH - 2 ) + 1;
 						tmp.Y = rand()%( HEIGHT - 2 ) + 1;
@@ -243,15 +246,20 @@ void* CheckMap( void* ){
 						User[i]->AddSnake( tmp.X, tmp.Y );
 						User[i]->SetNewGame( false );
 					}
+					if( User[i]->Snake.size() <= 0 ){
+						continue;
+					}
 	//CHECK HEAD
 					_direction = User[i]->ReturnDirection();
 					_firstXY = User[i]->Snake.begin();
 					tmp.X = _firstXY->X;
 					tmp.Y = _firstXY->Y;
+					_head[i+1].X = tmp.X;
+					_head[i+1].Y = tmp.Y;
 					switch( _direction ){
 						case 'u':
 							_firstXY->Y -= 1;
-							if( User[i]->Snake[0].Y < 0 ){
+							if( _firstXY->Y < 0 ){
 								User[i]->GameOver();
 							}else if( Map[_firstXY->Y][_firstXY->X] == 0 ){
 								_plus.X = User[i]->Snake.back().X;
@@ -266,7 +274,7 @@ void* CheckMap( void* ){
 							break;
 						case 'd':
 							_firstXY->Y += 1;
-							if( User[i]->Snake[0].Y >= HEIGHT ){
+							if( _firstXY->Y >= HEIGHT ){
 								User[i]->GameOver();
 							}else if( Map[_firstXY->Y][_firstXY->X] == 0 ){
 								_plus.X = User[i]->Snake.back().X;
@@ -281,7 +289,7 @@ void* CheckMap( void* ){
 							break;
 						case 'r':
 							_firstXY->X += 1;
-							if( User[i]->Snake[0].X >= WIDTH ){
+							if( _firstXY->X >= WIDTH ){
 								User[i]->GameOver();
 							}else if( Map[_firstXY->Y][_firstXY->X] == 0 ){
 								_plus.X = User[i]->Snake.back().X;
@@ -296,7 +304,7 @@ void* CheckMap( void* ){
 							break;
 						case 'l':
 							_firstXY->X -= 1;
-							if( User[i]->Snake[0].X < 0 ){
+							if( _firstXY->X < 0 ){
 								User[i]->GameOver();
 							}else if( Map[_firstXY->Y][_firstXY->X] == 0 ){
 								_plus.X = User[i]->Snake.back().X;
@@ -337,6 +345,13 @@ void* CheckMap( void* ){
 			for( i=0; i<MAX_PLAYER; ++i ){
 				if( User[i] != NULL && User[i]->ReturnInit() ){
 					User[i]->SendEx( ToSend );
+				}
+			}
+		//COLLISION WITH OTHER PLAYER
+			for( _it_head = _head.begin(); _it_head != _head.end(); _it_head++ ){
+				j = Map[_it_head->second.Y][_it_head->second.X];
+				if( j > 0 and j != _it_head->first ){
+					User[_it_head->first-1]->GameOver();
 				}
 			}
 			_now = clock();
