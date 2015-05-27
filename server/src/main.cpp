@@ -67,7 +67,7 @@ int main( int argc, char* argv[] ){
 		}while( Error < 0 );
 		Target = gethostbyaddr( &Client.sin_addr.s_addr, sizeof( Client.sin_addr.s_addr ), Client.sin_family );
 		if( Target == NULL ){
-			perror( "[ERROR] gethostbyaddr" );
+			herror( "[ERROR] gethostbyaddr" );
 			CaughtSignal( 0 );
 		}
 		ClientInfo.Socket = Error;
